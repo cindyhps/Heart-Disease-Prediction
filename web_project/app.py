@@ -9,9 +9,13 @@ from scipy.stats import boxcox
 with open('trained_models.pkl', 'rb') as f:
     models = pickle.load(f)
 
+# Load the accuracy models
+with open('model_accuracies.pkl', 'rb') as f:
+    model_accuracies = pickle.load(f)
+
 # Define a function for prediction
 def predict(model, data):
-    return model.predict(data)
+    return model.predict_proba(data)
 
 # Define a function to transform input data
 def transform_input(data, lambdas):
@@ -27,7 +31,7 @@ st.sidebar.header('User Input Features')
 
 # Define the input fields
 def user_input_features():
-    age = st.sidebar.slider('Age', 29, 77, 54)
+    age = st.sidebar.slider('Age', 10, 90, 50)
     sex = st.sidebar.selectbox('Sex, Male 0 and Female 1', [0, 1])
     cp = st.sidebar.selectbox('Chest Pain Type', [0, 1, 2, 3])
     trestbps = st.sidebar.slider('Resting Blood Pressure', 94, 200, 130)
@@ -45,17 +49,22 @@ def user_input_features():
     data = {
         'age': age,
         'sex': sex,
-        'cp': cp,
         'trestbps': trestbps,
         'chol': chol,
         'fbs': fbs,
-        'restecg': restecg,
         'thalach': thalach,
         'exang': exang,
         'oldpeak': oldpeak,
         'slope': slope,
         'ca': ca,
-        'thal': thal
+        'thal_1': 0,  
+        'thal_2': 0,
+        'thal_3': 0,
+        'cp_1': 0,
+        'cp_2': 0,
+        'cp_3': 0,
+        'restecg_1': 0,
+        'restecg_2': 0
     }
     features = pd.DataFrame(data, index=[0])
     return features
@@ -93,7 +102,7 @@ def main():
 
 # Transform input data
 lambdas = {'age': 0.5, 'trestbps': 0.1, 'chol': 0.1, 'thalach': 0.1, 'oldpeak': 0.1}  # Example lambdas, replace with actual values
-input_transformed = transform_input(input_df, lambdas)
+input_transformed = transform_input(input_df.copy(), lambdas)
 
 # Scaling input data
 scaler = StandardScaler()
@@ -105,8 +114,10 @@ model_choice = st.sidebar.selectbox('Model Choice', ['DT', 'RF', 'KNN', 'SVM'])
 # Prediction
 if st.button('Predict'):
     model = models[model_choice]
+    accuracy = model_accuracies[model_choice]
     prediction = predict(model, input_scaled)
-    st.write(f'Prediction (1 indicates presence of heart disease, 0 indicates absence): {prediction[0]}')
+    st.write(f'Prediction probability of having heart disease: {prediction[0][1]*100:.2f}%')
+    st.write(f'Confidence level (based on model accuracy): {accuracy*100:.2f}%')
 
 # Display user input
 st.subheader('User Input Features')
